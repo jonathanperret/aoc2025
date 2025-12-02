@@ -31,8 +31,10 @@ def part2(input):
     matches = 0
     position = 50
     for value in values:
+        matches += abs(value) // 100
+        incr = (1 if value > 0 else -1)
+        value = abs(value) % 100 * incr
         while abs(value) > 0:
-            incr = (1 if value > 0 else -1)
             position = (position + incr) % 100
             if position == 0:
                 matches += 1
