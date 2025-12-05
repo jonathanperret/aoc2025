@@ -31,21 +31,18 @@ def part1(input):
     )
     return fresh
 
-from functools import reduce
-from more_itertools import partition
+
 def part2(input):
     ranges, _ = parse(input)
-    merged = []
-    for new_range in ranges:
-        non_intersecting, intersecting = \
-            partition(lambda r: new_range[0] <= r[1] and new_range[1] >= r[0],
-                      merged)
-        union = reduce(lambda r1, r2: (
-                    min(r1[0], r2[0]),
-                    max(r1[1], r2[1]),
-                ), intersecting, new_range)
-        merged = list(non_intersecting) + [ union ]
-    result = sum(b - a + 1 for (a, b) in merged)
+    ranges.sort()
+    last_counted = -1
+    result = 0
+    for r in ranges:
+        if r[1] > last_counted:
+            result += r[1] - last_counted
+            if r[0] > last_counted + 1:
+                result -= r[0] - last_counted -1
+            last_counted = r[1]
     return result
 
 
@@ -68,6 +65,6 @@ if __name__ == '__main__':
     result = part2(INPUT)
     print("part2:", result)
     assert result == 332067203034711
-#
-#    num, total = timeit.Timer(lambda: part2(INPUT)).autorange()
-#    print("time=", total / num)
+
+    num, total = timeit.Timer(lambda: part2(INPUT)).autorange()
+    print("time=", total / num)
