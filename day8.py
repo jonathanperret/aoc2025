@@ -37,6 +37,7 @@ def merge_shortest(boxes, limit=None):
                        key=lambda pair: dist(boxes[pair[0]], boxes[pair[1]]))
     circuits = { i: { i } for i in range(len(boxes)) }
     parents = list(range(len(boxes)))
+    links = []
     for i1, i2 in shortest[:limit]:
         circuit1, circuit2 = parents[i1], parents[i2]
         if circuit1 != circuit2:
@@ -44,22 +45,27 @@ def merge_shortest(boxes, limit=None):
                 parents[i] = circuit1
             circuits[circuit1].update(circuits[circuit2])
             del circuits[circuit2]
+            links.append((i1, i2))
             if len(circuits) == 1:
-                return (i1, i2)
-    return circuits
+                break
+    return circuits, links
 
 
 def part1(input, limit=1000):
     boxes = parse(input)
-    circuits = merge_shortest(boxes, limit)
+    circuits, _ = merge_shortest(boxes, limit)
     sizes = list(reversed(sorted(len(circuit) for circuit in circuits.values())))
     return sizes[0] * sizes[1] * sizes[2]
 
 
-def part2(input):
+def part2(input, write=False):
     boxes = parse(input)
-    last1, last2 = merge_shortest(boxes)
-    return boxes[last1][0] * boxes[last2][0]
+    _, links = merge_shortest(boxes)
+    if write:
+        with open("day8.inc", "wt") as f:
+            f.write(f"boxes = {boxes};\n")
+            f.write(f"links = {list(map(list, links))};\n")
+    return boxes[links[-1][0]][0] * boxes[links[-1][1]][0]
 
 
 def test_part1():
@@ -78,7 +84,7 @@ if __name__ == '__main__':
     print("part1:", result)
     assert result == 103488
 
-    result = part2(INPUT)
+    result = part2(INPUT, write=True)
     print("part2:", result)
     assert result == 8759985540
 
