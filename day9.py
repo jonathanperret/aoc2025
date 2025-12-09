@@ -2,6 +2,8 @@ import re
 import timeit
 from collections import defaultdict
 from math import dist
+from bisect import bisect_left, bisect_right
+from itertools import islice
 
 SAMPLE = """7,1
 11,1
@@ -31,28 +33,48 @@ def part1(input, limit=1000):
     return max(areas)
 
 
-def check(tiles, tile1, tile2):
-    minx, maxx = min(tile1[0], tile2[0]), max(tile1[0], tile2[0])
-    miny, maxy = min(tile1[1], tile2[1]), max(tile1[1], tile2[1])
-    pos1 = tiles[-1]
-    for pos2 in tiles:
-        if not(
-                (pos1[0] <= minx and pos2[0] <= minx) or
-                (pos1[0] >= maxx and pos2[0] >= maxx) or
-                (pos1[1] <= miny and pos2[1] <= miny) or
-                (pos1[1] >= maxy and pos2[1] >= maxy) ):
+def check(h_edges, v_edges, tile1, tile2):
+    minx, maxx = sorted((tile1[0], tile2[0]))
+    miny, maxy = sorted((tile1[1], tile2[1]))
+
+    h_first = bisect_right(h_edges, miny, key=lambda e:e[0])
+    h_last = bisect_left(h_edges, maxy, key=lambda e:e[0])
+
+    for h_edge, x1, x2 in islice(h_edges, h_first, h_last):
+        if ((x1 > minx or x2 > minx) and
+            (x1 < maxx or x2 < maxx)):
             return False
-        pos1 = pos2
+
+    v_first = bisect_right(v_edges, minx, key=lambda e:e[0])
+    v_last = bisect_left(v_edges, maxx, key=lambda e:e[0])
+
+    for v_edge, y1, y2 in islice(v_edges, v_first, v_last):
+        if ( (y1 <= miny and y2 <= miny) or
+             (y1 >= maxy and y2 >= maxy) ):
+            continue
+        return False
 
     return True
 
 
 def part2(input, write=False):
     tiles = parse(input)
+    edges = [ (tile1, tiles[(i1 + 1) % len(tiles)])
+              for i1, tile1 in enumerate(tiles) ]
+    h_edges = sorted(
+                (tile1[1], *sorted((tile1[0], tile2[0])))
+                for (tile1, tile2) in edges
+                if tile1[1] == tile2[1]
+              )
+    v_edges = sorted(
+                (tile1[0], *sorted((tile1[1], tile2[1])))
+                for (tile1, tile2) in edges
+                if tile1[0] == tile2[0]
+              )
     areas = [ area(tile1, tile2)
               for i1, tile1 in enumerate(tiles)
               for tile2 in tiles[:i1]
-              if check(tiles, tile1, tile2) ]
+              if check(h_edges, v_edges, tile1, tile2) ]
     return max(areas)
 
 
